@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import OpenAI from 'openai';
+import { z } from "zod";
+import OpenAI from "openai";
 
 // Zodtractor configuration type
 export interface ZodtractorConfig {
@@ -47,45 +47,52 @@ export class Zodtractor {
     try {
       // Convert schema structure to JSON schema
       const jsonSchema = this.zodToJsonSchema(schema);
-      
       // Create prompt with schema description and structure
-      const prompt = this.createPrompt(text, jsonSchema, schemaDescription, options?.additionalContext);
-      
+      const prompt = this.createPrompt(
+        text,
+        jsonSchema,
+        schemaDescription,
+        options?.additionalContext
+      );
+
       // Call OpenAI API
       const response = await this.openai.chat.completions.create({
         model: this.model,
         messages: [
           {
-            role: 'system',
-            content: 'You are a json data extraction assistant. Your task is to extract structured data from the given text according to the specified schema.'
+            role: "system",
+            content:
+              "You are a json data extraction assistant. Your task is to extract structured data from the given text according to the specified schema.",
           },
           {
-            role: 'user',
-            content: prompt
-          }
+            role: "user",
+            content: prompt,
+          },
         ],
         temperature: options?.temperature ?? 0.2,
         max_tokens: options?.maxTokens,
-        response_format: { type: 'json_object' }
+        response_format: { type: "json_object" },
       });
 
       // Get API response
       const content = response.choices[0]?.message.content;
-      
+
       if (!content) {
-        throw new Error('API response is empty or invalid');
+        throw new Error("API response is empty or invalid");
       }
 
       // Parse JSON response
       const parsedData = JSON.parse(content);
-      
+
       // Validate with Zod schema
       const validatedData = schema.parse(parsedData);
-      
+
       return validatedData;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Schema validation error: ${JSON.stringify(error.errors)}`);
+        throw new Error(
+          `Schema validation error: ${JSON.stringify(error.errors)}`
+        );
       }
       throw error;
     }
@@ -108,30 +115,33 @@ export class Zodtractor {
    * @returns Schema description
    */
   private getSchemaDescription(schema: z.ZodTypeAny): any {
-    if (schema instanceof z.ZodObject) {
+    if (schema._def.typeName === "ZodObject") {
       const shape = schema._def.shape();
       const result: Record<string, any> = {};
-      
       for (const [key, value] of Object.entries(shape)) {
         const zodValue = value as z.ZodTypeAny;
         result[key] = {
           type: this.getZodTypeName(zodValue),
-          description: zodValue.description || '',
-          ...(zodValue instanceof z.ZodObject ? { properties: this.getSchemaDescription(zodValue) } : {}),
-          ...(zodValue instanceof z.ZodArray ? { items: this.getSchemaDescription(zodValue._def.type) } : {})
+          description: zodValue.description || "",
+          ...(zodValue._def.typeName === "ZodObject"
+            ? { properties: this.getSchemaDescription(zodValue) }
+            : {}),
+          ...(zodValue._def.typeName === "ZodArray"
+            ? { items: this.getSchemaDescription(zodValue._def.type) }
+            : {}),
         };
       }
-      
+
       return result;
-    } else if (schema instanceof z.ZodArray) {
+    } else if (schema._def.typeName === "ZodArray") {
       return {
-        type: 'array',
-        items: this.getSchemaDescription(schema._def.type)
+        type: "array",
+        items: this.getSchemaDescription(schema._def.type),
       };
     } else {
       return {
         type: this.getZodTypeName(schema),
-        description: schema.description || ''
+        description: schema.description || "",
       };
     }
   }
@@ -142,14 +152,32 @@ export class Zodtractor {
    * @returns Type name
    */
   private getZodTypeName(schema: z.ZodTypeAny): string {
-    if (schema instanceof z.ZodString) return 'string';
-    if (schema instanceof z.ZodNumber) return 'number';
-    if (schema instanceof z.ZodBoolean) return 'boolean';
-    if (schema instanceof z.ZodArray) return 'array';
-    if (schema instanceof z.ZodObject) return 'object';
-    if (schema instanceof z.ZodNull) return 'null';
-    if (schema instanceof z.ZodOptional) return this.getZodTypeName(schema._def.innerType);
-    return 'unknown';
+    const typeName = schema._def.typeName;
+
+    switch (typeName) {
+      case "ZodString":
+        return "string";
+      case "ZodNumber":
+        return "number";
+      case "ZodBoolean":
+        return "boolean";
+      case "ZodArray":
+        return "array";
+      case "ZodObject":
+        return "object";
+      case "ZodNull":
+        return "null";
+      case "ZodOptional":
+        return this.getZodTypeName(schema._def.innerType);
+      case "ZodEnum":
+        return "enum";
+      case "ZodLiteral":
+        return typeof schema._def.value;
+      case "ZodDate":
+        return "date";
+      default:
+        return "unknown";
+    }
   }
 
   /**
@@ -182,7 +210,7 @@ ${JSON.stringify(jsonSchema, null, 2)}
 ${text}
 \`\`\`
 
-${additionalContext ? `## Additional Context\n${additionalContext}\n` : ''}
+${additionalContext ? `## Additional Context\n${additionalContext}\n` : ""}
 
 ## Instructions
 1. Analyze the text above
