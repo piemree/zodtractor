@@ -21,12 +21,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/piemr/zodtractor.git"
+    "url": "git+https://github.com/piemree/zodtractor.git"
   },
   "bugs": {
-    "url": "https://github.com/piemr/zodtractor/issues"
+    "url": "https://github.com/piemree/zodtractor/issues"
   },
-  "homepage": "https://github.com/piemr/zodtractor#readme",
+  "homepage": "https://github.com/piemree/zodtractor#readme",
   "dependencies": {
     "openai": "^4.28.0",
     "zod": "^3.22.4"
