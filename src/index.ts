@@ -57,7 +57,7 @@ export class Zodtractor {
         messages: [
           {
             role: 'system',
-            content: 'You are a data extraction assistant. Your task is to extract structured data from the given text according to the specified schema.'
+            content: 'You are a json data extraction assistant. Your task is to extract structured data from the given text according to the specified schema.'
           },
           {
             role: 'user',
