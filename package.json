@@ -1,6 +1,6 @@
 {
   "name": "zodtractor",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "AI-powered text extraction using Zod schemas",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
